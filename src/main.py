@@ -1,13 +1,14 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 from random import choice, randint
-from re import findall, compile as comp
+import re as regex
+import deeppyer
+from pydantic import BaseModel
+from typing import Union
+from aiohttp import request
+from io import BytesIO
+from PIL import Image, ImageOps, ImageEnhance
 
 from data import *
-
-
-class Image(BaseModel):
-    image: bytes
 
 
 app = FastAPI()
@@ -36,19 +37,19 @@ async def autoreply(message: str):
     elif "psps" in message:
         # piss counter
         piss = 0
-        for _ in findall("ps", message):
+        for _ in regex.findall("ps", message):
             piss += 1
 
         # full piss counter
         capitals = 0
-        for _ in findall("PS", command):
+        for _ in regex.findall("PS", command):
             capitals += 2
         if capitals / 2 == piss:  # if it's all PS, let it w i d e
             # print('piss')
             piss = 3
 
         if piss >= 3:
-            for _ in findall(comp("[P, S][p,s]|[p, s][P, S]"), message):
+            for _ in regex.findall(regex.compile("[P, S][p,s]|[p, s][P, S]"), message):
                 capitals += 1
 
             if capitals >= 3:
@@ -134,3 +135,59 @@ async def consult_8_ball(question: str):
     elif option == 3:
         response = "🔴 " + choice(negative)
     return {"message": f"🎱 The 8-ball has spoken. 🎱\nQuestion: {question}\nAnswer: {response}"}
+
+
+# begin image manip mess
+matcher = regex.compile(
+    r'^(?:http|ftp)s?://'  # http:// or https://
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+    # r'localhost|' #localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+    r'(?::\d+)?'  # optional port
+    r'(?:/?|[/?]\S+)$', regex.IGNORECASE)
+
+catLampTemplate = Image.open('images/catlamp-outlineonly.png', mode='r').convert('RGBA')
+dioTemplate = Image.open('images/dio.png', mode='r').convert('RGBA')
+flushedTemplate = Image.open('images/flushed.png', mode='r').convert('RGBA')
+joyTemplate = Image.open('images/joy.png', mode='r').convert('RGBA')
+
+
+async def getImage(image: str) -> Union[Image.Image, str]:
+    if isinstance(image, str):
+        if regex.match(matcher, image) and image.split("?")[0][-4:] in ('.png', '.jpg', 'jpeg', '.gif', 'webp'):
+            async with request('get', image) as res:
+                if res.status == 200:
+                    image = await res.read()
+                else:
+                    return f'There was an issue getting the URL "{image}"!'
+        else:
+            return f'"{image}" is not a valid image URL!'
+    try:
+        image = Image.open(BytesIO(image))
+    except Exception as e:
+        image = str(e)
+    return image
+
+
+def packageImage(outImg: Image.Image, file_name: str = "image.png") -> dict:
+    img = BytesIO()
+    outImg.save(img, "png")
+    img.seek(0)
+    return {"image": img.read(), "file_name": file_name}
+
+
+# define methods
+@app.get("/images/deepfry")
+async def deepfry(image_url: str):
+    """Deepfries the attached image or your/the mentioned user's avatar."""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"detail": image}
+    # noinspection PyTypeChecker
+    deepImg = await deeppyer.deepfry(image, flares=False)
+    deepImg = deepImg.convert('RGBA')  # i dunno, deepImg is an Image.py, but sendImage() wants Image
+    return packageImage(deepImg, "deepfry.png")
+# @app.get("/images/catlamp")
+# async def make_catlamp(image: str):
+#     image = getImage(image)
+
