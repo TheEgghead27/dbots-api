@@ -570,6 +570,55 @@ async def rotate(image_url: str, degrees: float):
     return Response(content=sendImage(outImg), media_type="application/png")
 
 
+@app.get("/images/custom_overlay.png")
+async def custom_overlay(image_url: str, overlay_url: str):
+    """
+    Generates an image with a custom overlay on top of it.
+    A magenta color of (255, 0, 255, 255) represents areas where the main image will show through the overlay,
+    and a green color of (0, 255, 0, 255) represents transparency in the final output.
+    Shades of these colors caused by anti-aliasing in the source template will not be replaced.
+    Transparency in the overlay image has not been tested due to developer laziness.
+    """
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+    overlay = await getImage(overlay_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    # find a color not in either image so we can use it for transparency in the final product
+    alpha = findDualAlphaTarget(image, overlay)
+
+    # convert the images to be equal in size and mode for compatibility
+    image = centerSquare(image)
+
+    if image.size > overlay.size:
+        image.thumbnail(overlay.size)
+        # set alpha color outside of the lamp (replace green with the designated alpha color)
+        overlay = replaceColor(overlay, (0, 255, 0, 255), alpha)
+
+        # cut hole in template (remove the magenta pixels)
+        overlay = hippityHoppityThisColorIsDisappearity(overlay, (255, 0, 255, 255))
+    else:
+        # cut hole in template (remove the magenta pixels)
+        overlay = hippityHoppityThisColorIsDisappearity(overlay, (255, 0, 255, 255))
+
+        overlay.thumbnail(image.size, Image.NEAREST)  # this son of the bitches is the problem
+
+        # replace transparent green with alpha
+        overlay = replaceColor(overlay, (0, 255, 0, 255), alpha)
+
+    image = image.convert(mode=overlay.mode)
+
+    # combine overlay with image
+    outImg = Image.alpha_composite(image, overlay)
+
+    # make the outside actually transparent
+    outImg = hippityHoppityThisColorIsDisappearity(outImg, alpha)
+
+    return Response(content=sendImage(outImg), media_type="application/png")
+
+
 # general template because again
 # @app.get("/images/image.png")
 # async def name(image_url: str):
