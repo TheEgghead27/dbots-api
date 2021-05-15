@@ -11,7 +11,8 @@ from PIL import Image, ImageOps, ImageEnhance
 from data import *
 
 
-app = FastAPI()
+app = FastAPI(title="Eggbot + Catlamp API (Working Title)",
+              description="FastAPI API with ports of the functionality some of my Discord bot projects had.")
 
 
 @app.get("/")
