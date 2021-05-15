@@ -8,7 +8,10 @@ from aiohttp import request
 from io import BytesIO
 from PIL import Image, ImageOps, ImageEnhance
 
-from data import *
+try:
+    from data import *
+except ModuleNotFoundError:
+    from src.data import *
 
 
 app = FastAPI(title="Eggbot + Catlamp API (Working Title)",
@@ -147,10 +150,16 @@ matcher = regex.compile(
     r'(?::\d+)?'  # optional port
     r'(?:/?|[/?]\S+)$', regex.IGNORECASE)
 
-catLampTemplate = Image.open('images/catlamp-outlineonly.png', mode='r').convert('RGBA')
-dioTemplate = Image.open('images/dio.png', mode='r').convert('RGBA')
-flushedTemplate = Image.open('images/flushed.png', mode='r').convert('RGBA')
-joyTemplate = Image.open('images/joy.png', mode='r').convert('RGBA')
+try:
+    catLampTemplate = Image.open('images/catlamp-outlineonly.png', mode='r').convert('RGBA')
+    dioTemplate = Image.open('images/dio.png', mode='r').convert('RGBA')
+    flushedTemplate = Image.open('images/flushed.png', mode='r').convert('RGBA')
+    joyTemplate = Image.open('images/joy.png', mode='r').convert('RGBA')
+except FileNotFoundError:
+    catLampTemplate = Image.open('src/images/catlamp-outlineonly.png', mode='r').convert('RGBA')
+    dioTemplate = Image.open('src/images/dio.png', mode='r').convert('RGBA')
+    flushedTemplate = Image.open('src/images/flushed.png', mode='r').convert('RGBA')
+    joyTemplate = Image.open('src/images/joy.png', mode='r').convert('RGBA')
 
 
 async def getImage(image: str) -> Union[Image.Image, str]:
