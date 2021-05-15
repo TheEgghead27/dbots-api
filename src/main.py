@@ -1,8 +1,8 @@
-from fastapi import FastAPI
-from random import choice, randint
+import math
+import random
+from fastapi import FastAPI, Response
 import re as regex
 import deeppyer
-from pydantic import BaseModel
 from typing import Union
 from aiohttp import request
 from io import BytesIO
@@ -24,9 +24,9 @@ async def autoreply(message: str):
         if message.startswith(i):
             return {"message": i}
     if message.startswith(eggTrigger):
-        return {"message": choice(eggs)}
+        return {"message": random.choice(eggs)}
     elif message.startswith(("simp", "sɪᴍᴘ")):
-        return {"message": choice(simp)}
+        return {"message": random.choice(simp)}
     elif message.startswith(('moyai', '🗿', ':moyai:', 'mooyai')):
         return {"message": '🗿'}
 
@@ -77,7 +77,7 @@ async def about():
 async def random_kiri():
     """Displays an image of Eijiro Kirishima from My Hero Academia. You can specify the number of images you want
         to be sent. [request from Discord user Amane#6008]"""
-    return {"message": choice(kirilist)}
+    return {"message": random.choice(kirilist)}
 
 
 @app.get("/egg-recipes")
@@ -89,7 +89,7 @@ async def return_egg_recipes():
 @app.get("/rate-food")
 async def rate_food():
     """Rates your food like a certain angry chef"""
-    return {"message": choice(insults)}
+    return {"message": random.choice(insults)}
 
 
 @app.get("/say")
@@ -101,8 +101,8 @@ async def say(message: str):
 @app.get("/coin-flip")
 async def flip_coin():
     """Flips a coin."""
-    rand = randint(0, 1)
-    side = randint(1, 20)
+    rand = random.randint(0, 1)
+    side = random.randint(1, 20)
     if side == 20:
         return {"message": "The coin landed on... its side?"}
     elif rand == 0:
@@ -126,14 +126,14 @@ async def consult_8_ball(question: str):
     Asks the Magic 8-Ball a question.
     Disclaimer: The Magic 8-ball is not sentient and it does not represent the opinions its creators.
     """
-    option = randint(1, 3)
+    option = random.randint(1, 3)
     response = ""
     if option == 1:
-        response = "🟢 " + choice(positive)
+        response = "🟢 " + random.choice(positive)
     elif option == 2:
-        response = "🟡 " + choice(unsure)
+        response = "🟡 " + random.choice(unsure)
     elif option == 3:
-        response = "🔴 " + choice(negative)
+        response = "🔴 " + random.choice(negative)
     return {"message": f"🎱 The 8-ball has spoken. 🎱\nQuestion: {question}\nAnswer: {response}"}
 
 
@@ -169,25 +169,406 @@ async def getImage(image: str) -> Union[Image.Image, str]:
     return image
 
 
-def packageImage(outImg: Image.Image, file_name: str = "image.png") -> dict:
+# stole off the site with best SEO, https://note.nkmk.me/en/python-pillow-square-circle-thumbnail/
+def centerSquare(pil_img: Image.Image):
+    """Adds padding on both sides to make an image square. (Centered)"""
+    pil_img = pil_img.convert('RGBA')  # ensure transparency
+    background_color = (0, 0, 0, 0)
+    width, height = pil_img.size
+    if width == height:
+        return pil_img
+    elif width > height:
+        result = Image.new(pil_img.mode, (width, width), background_color)
+        result.paste(pil_img, (0, (width - height) // 2))
+        return result
+    else:
+        result = Image.new(pil_img.mode, (height, height), background_color)
+        result.paste(pil_img, ((height - width) // 2, 0))
+        return result
+
+
+def simpSquare(pil_img: Image.Image):
+    """Adds padding to the bottom or right of an image to make it square."""
+    background_color = (0, 0, 0, 0)
+    width, height = pil_img.size
+    if width == height:
+        return pil_img
+    elif width > height:
+        result = Image.new(pil_img.mode, (width, width), background_color)
+        result.paste(pil_img, (0, 0))
+        return result, 'Y'
+    else:
+        result = Image.new(pil_img.mode, (height, height), background_color)
+        result.paste(pil_img, (0, 0))
+        return result, 'X'
+
+
+def hippityHoppityThisColorIsDisappearity(img: Image.Image, color: tuple = (0, 255, 0)):
+    """Alias for replaceColor() with a result of transparent white"""
+    return replaceColor(img, targetIn=color, colorOut=(255, 255, 255, 0))
+
+
+# https://stackoverflow.com/questions/765736/using-pil-to-make-all-white-pixels-transparent
+def replaceColor(image: Image.Image, targetIn: tuple, colorOut: tuple):
+    img = image.convert("RGBA")
+    Data = img.getdata()
+
+    newData = []
+    try:
+        for item in Data:
+            if item[0] == targetIn[0] and item[1] == targetIn[1] and item[2] == targetIn[2] and item[3] == targetIn[3]:
+                newData.append(colorOut)
+            else:
+                newData.append(item)
+    except IndexError:
+        for item in Data:
+            if item[0] == targetIn[0] and item[1] == targetIn[1] and item[2] == targetIn[2]:
+                newData.append(colorOut)
+            else:
+                newData.append(item)
+
+    img.putdata(newData)
+
+    return img
+
+
+def findMonoAlphaTarget(image: Image.Image):
+    satisfied = False
+    potentialTarget = (0, 255, 0, 255)  # start with green
+    blacklist = []
+    Fuck = 0
+
+    while not satisfied:
+        if Fuck == 10:
+            random.seed()
+            Fuck = 0
+
+        if potentialTarget not in blacklist:
+            if potentialTarget in image.getdata():
+                blacklist.append(potentialTarget)
+            else:
+                satisfied = True
+        else:
+            Fuck += 1
+
+        # randomize target
+        potentialTarget = (random.randrange(0, 256), random.randrange(0, 256), random.randrange(0, 256), 255)
+
+    return potentialTarget
+
+
+def findDualAlphaTarget(image1: Image.Image, image2: Image.Image):
+    satisfied = False
+    potentialTarget = (0, 255, 0, 255)  # start with green
+    blacklist = []
+    Fuck = 0
+
+    while not satisfied:
+        if Fuck == 10:
+            random.seed()
+            Fuck = 0
+
+        if potentialTarget not in blacklist:
+            if potentialTarget in image1.getdata() or potentialTarget in image2.getdata():
+                blacklist.append(potentialTarget)
+            else:
+                satisfied = True
+        else:
+            Fuck += 1
+
+        # randomize target
+        potentialTarget = (random.randrange(0, 256), random.randrange(0, 256), random.randrange(0, 256), 255)
+
+    return potentialTarget
+
+
+def sendImage(outImg: Image.Image) -> bytes:
     img = BytesIO()
     outImg.save(img, "png")
     img.seek(0)
-    return {"image": img.read(), "file_name": file_name}
+    return img.read()
 
 
 # define methods
-@app.get("/images/deepfry")
+@app.get("/images/deepfry.png")
 async def deepfry(image_url: str):
-    """Deepfries the attached image or your/the mentioned user's avatar."""
+    """Deepfries the image in the image URL."""
     image = await getImage(image_url)
     if isinstance(image, str):
-        return {"detail": image}
+        return {"message": image}  # error
     # noinspection PyTypeChecker
     deepImg = await deeppyer.deepfry(image, flares=False)
     deepImg = deepImg.convert('RGBA')  # i dunno, deepImg is an Image.py, but sendImage() wants Image
-    return packageImage(deepImg, "deepfry.png")
-# @app.get("/images/catlamp")
-# async def make_catlamp(image: str):
-#     image = getImage(image)
+    return Response(content=sendImage(deepImg), media_type="application/png")
 
+
+@app.get("/images/catlamp.png")
+async def catLamp(image_url: str):
+    """Generates a Catlamp of the image in the image URL."""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+    overlay = catLampTemplate.copy()
+
+    # find a color not in either image so we can use it for transparency in the final product
+    alpha = findDualAlphaTarget(image, overlay)
+
+    # convert the images to be equal in size and mode for compatibility
+    image = centerSquare(image)
+
+    if image.size > overlay.size:
+        image.thumbnail(overlay.size)
+        # set alpha color outside of the lamp (replace green with the designated alpha color)
+        overlay = replaceColor(overlay, (0, 255, 0, 255), alpha)
+
+        # cut hole in template (remove the magenta pixels)
+        overlay = hippityHoppityThisColorIsDisappearity(overlay, (255, 0, 255, 255))
+    else:
+        # cut hole in template (remove the magenta pixels)
+        overlay = hippityHoppityThisColorIsDisappearity(overlay, (255, 0, 255, 255))
+
+        overlay.thumbnail(image.size, Image.NEAREST)  # this son of the bitches is the problem
+
+        # replace transparent green with alpha
+        overlay = replaceColor(overlay, (0, 255, 0, 255), alpha)
+
+    image = image.convert(mode=overlay.mode)
+
+    # combine catLamp with image
+    outImg = Image.alpha_composite(image, overlay)
+
+    # make the outside actually transparent
+    outImg = hippityHoppityThisColorIsDisappearity(outImg, alpha)
+
+    return Response(content=sendImage(outImg), media_type="application/png")
+
+
+@app.get("/images/dio.png")
+async def dio(image_url: str):
+    """You expected the image in the image URL, but it was I, Dio!"""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    overlay = dioTemplate.copy()
+
+    # convert the images to be equal in size and mode for compatibility
+    image = centerSquare(image)
+
+    # cut hole in template (remove the magenta pixels)
+    overlay = hippityHoppityThisColorIsDisappearity(overlay, (255, 0, 255, 255))
+
+    if image.size > overlay.size:
+        image.thumbnail(overlay.size)
+    else:
+        overlay.thumbnail(image.size)  # this son of the bitches is the problem
+
+    image = image.convert(mode=overlay.mode)
+
+    # combine dio with image
+    outImg = Image.alpha_composite(image, overlay)
+
+    return Response(content=sendImage(outImg), media_type="application/png")
+
+
+@app.get("/images/flushed.png")
+async def flushed(image_url: str):
+    """The image in the image URL: 😳"""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    overlay = flushedTemplate.copy()
+
+    # convert the images to be equal in size and mode for compatibility
+    image = centerSquare(image)
+
+    # cut hole in template (remove the magenta pixels)
+    overlay = hippityHoppityThisColorIsDisappearity(overlay, (255, 0, 255, 255))
+
+    if image.size > overlay.size:
+        image.thumbnail(overlay.size)
+    else:
+        overlay.thumbnail(image.size)  # this son of the bitches is the problem
+
+    image = image.convert(mode=overlay.mode)
+
+    # combine flushy with image
+    outImg = Image.alpha_composite(image, overlay)
+
+    return Response(content=sendImage(outImg), media_type="application/png")
+
+
+@app.get("/images/joy.png")
+async def joy(image_url: str):
+    """😂😂😂 This command makes the image in the image URL a joke. 😂😂😂"""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    overlay = joyTemplate.copy()
+
+    # convert the images to be equal in size and mode for compatibility
+    image = centerSquare(image)
+
+    # cut hole in template (remove the magenta pixels)
+    overlay = hippityHoppityThisColorIsDisappearity(overlay, (255, 0, 255, 255))
+
+    if image.size > overlay.size:
+        image.thumbnail(overlay.size)
+    else:
+        overlay.thumbnail(image.size)  # this son of the bitches is the problem
+
+    image = image.convert(mode=overlay.mode)
+
+    # combine dio with image
+    outImg = Image.alpha_composite(image, overlay)
+
+    return Response(content=sendImage(outImg), media_type="application/png")
+
+
+@app.get("/images/invert.png")
+async def invert(image_url: str):
+    """Inverts the image in the image URL."""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    if image.mode == "RGBA":
+        alpha = findMonoAlphaTarget(image)
+
+        alphaTemp = Image.new('RGB', (1, 1), alpha)
+        alphaTemp = ImageOps.invert(alphaTemp)
+
+        alphaInvert = alphaTemp.getdata()[0]  # find inverted alpha color
+
+        image = Image.alpha_composite(Image.new('RGBA', (image.width, image.height), alpha), image)
+    else:
+        alphaInvert = None
+
+    image = image.convert('RGB')  # i dunno, ImageOps wants an RGB
+    image = ImageOps.invert(image)
+
+    if alphaInvert:
+        image = hippityHoppityThisColorIsDisappearity(image, alphaInvert)
+
+    return Response(content=sendImage(image), media_type="application/png")
+
+
+@app.get("/images/grayscale.png")
+async def sadden(image_url: str):
+    """😔"""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    image = image.convert('RGB')  # i dunno, ImageOps wants an RGB
+    image = ImageOps.grayscale(image)
+
+    return Response(content=sendImage(image), media_type="application/png")
+
+
+@app.get("/images/saturate.png")
+async def saturate(image_url: str):
+    """Saturates the image in the image URL."""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    image = image.convert('RGB')  # i dunno, ImageEnhance might want an RGB
+    enhancer = ImageEnhance.Contrast(image)
+    image = enhancer.enhance(2)
+    enhancer = ImageEnhance.Color(image)
+    image = enhancer.enhance(3)
+
+    return Response(content=sendImage(image), media_type="application/png")
+
+
+@app.get("/images/mirror.png")
+async def mirror(image_url: str):
+    """Creates a mirrored image of the image in the image URL."""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    outImg = image.transpose(method=Image.FLIP_LEFT_RIGHT)  # processing here
+
+    return Response(content=sendImage(outImg), media_type="application/png")
+
+
+@app.get("/images/flip.png")
+async def flip(image_url: str):
+    """Creates an upside-down copy of the image in the image URL."""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    outImg = image.transpose(method=Image.FLIP_TOP_BOTTOM)  # processing here
+    outImg = outImg.transpose(method=Image.FLIP_LEFT_RIGHT)  # top bottom makes it also flip on the x
+
+    return Response(content=sendImage(outImg), media_type="application/png")
+
+
+@app.get("/images/rotate.png")
+async def rotate(image_url: str, degrees: float):
+    """Rotates the image in the image URL clockwise by the specified number of degrees.
+    (Algorithms contributed by Blue#1287 (494615059474153483))"""
+    image = await getImage(image_url)
+    if isinstance(image, str):
+        return {"message": image}  # error
+
+    image = image.convert('RGBA')  # make it so transparency generates instead of black
+
+    angleOffset = degrees % 90  # this is what we'll use instead of input
+    if angleOffset == 0:
+        if degrees % 180 == 90:  # plot twist, the angle was also 90
+            angleOffset = 90
+
+    diagonal = math.sqrt(image.width ** 2 + image.height ** 2)  # finding the length of the rectangle's diagonal
+
+    # this very well might return radians instead of degrees so we gotta convert
+    b = math.degrees(math.atan(image.width / image.height))
+
+    # finding angle of the diagonal of the rectangle to the uhhhh global 90 degree line uhhhhh
+    a = 90 - (angleOffset + b)
+
+    rotatedWidth = diagonal * math.cos(math.radians(a))  # this requires radians and not degrees
+
+    b = math.degrees(math.atan(image.height / image.width))
+
+    # finding angle of the diagonal of the rectangle to the uhhhh global 90 degree line uhhhhh
+    a = 90 - (angleOffset + b)
+
+    rotatedHeight = diagonal * math.cos(math.radians(a))  # this requires radians and not degrees
+
+    if rotatedWidth > rotatedHeight:
+        biggest = math.floor(rotatedWidth)
+    else:
+        biggest = math.floor(rotatedHeight)
+    result = Image.new(image.mode, (biggest, biggest), (0, 0, 0, 0))  # big image to prevent cutting off stuff
+    # paste the image on in a centered position
+    result.paste(image, ((result.width // 2) - (image.width // 2), (result.height // 2) - image.height // 2))
+
+    outImg = result.rotate(angle=-degrees)  # for some cursed reason, rotate() defaults to counterclockwise
+
+    # do some centering math stuff to find the coordinates of the actual content
+    outImg = outImg.crop((round(outImg.width / 2 - rotatedWidth / 2),
+                          round(outImg.height / 2 - rotatedHeight / 2),
+                          round(outImg.width / 2 + rotatedWidth / 2),
+                          round(outImg.height / 2 + rotatedHeight / 2)))
+
+    return Response(content=sendImage(outImg), media_type="application/png")
+
+
+# general template because again
+# @app.get("/images/image.png")
+# async def name(image_url: str):
+#     """document here"""
+#     image = await getImage(image_url)
+#     if isinstance(image, str):
+#         return {"message": image}  # error
+#
+#     outImg = None  # processing here
+#     outImg = outImg.convert('RGBA')
+#
+#     return Response(content=sendImage(outImg), media_type="application/png")
