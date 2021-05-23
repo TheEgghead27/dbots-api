@@ -2,7 +2,6 @@ import math
 import random
 from fastapi import FastAPI, Response
 import re as regex
-import deeppyer
 from typing import Union
 from aiohttp import request
 from io import BytesIO
@@ -300,16 +299,21 @@ def sendImage(outImg: Image.Image) -> bytes:
 
 
 # define methods
-@app.get("/images/deepfry.png")
-async def deepfry(image_url: str):
-    """Deepfries the image in the image URL."""
-    image = await getImage(image_url)
-    if isinstance(image, str):
-        return {"message": image}  # error
-    # noinspection PyTypeChecker
-    deepImg = await deeppyer.deepfry(image, flares=False)
-    deepImg = deepImg.convert('RGBA')  # i dunno, deepImg is an Image.py, but sendImage() wants Image
-    return Response(content=sendImage(deepImg), media_type="application/png")
+try:
+    import deeppyer
+    @app.get("/images/deepfry.png")
+    async def deepfry(image_url: str):
+        """Deepfries the image in the image URL."""
+        image = await getImage(image_url)
+        if isinstance(image, str):
+            return {"message": image}  # error
+        # noinspection PyTypeChecker
+        deepImg = await deeppyer.deepfry(image, flares=False)
+        deepImg = deepImg.convert('RGBA')  # i dunno, deepImg is an Image.py, but sendImage() wants Image
+        return Response(content=sendImage(deepImg), media_type="application/png")
+except Exception as e:
+    print("ERROR UH OH OOPSIE WOOPSIES\n{e}")
+        
 
 
 @app.get("/images/catlamp.png")
