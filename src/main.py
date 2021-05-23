@@ -173,8 +173,8 @@ async def getImage(image: str) -> Union[Image.Image, str]:
             return f'"{image}" is not a valid image URL!'
     try:
         image = Image.open(BytesIO(image))
-    except Exception as e:
-        image = str(e)
+    except Exception as ex:
+        image = str(ex)
     return image
 
 
@@ -301,6 +301,7 @@ def sendImage(outImg: Image.Image) -> bytes:
 # define methods
 try:
     import deeppyer
+
     @app.get("/images/deepfry.png")
     async def deepfry(image_url: str):
         """Deepfries the image in the image URL."""
@@ -312,9 +313,8 @@ try:
         deepImg = deepImg.convert('RGBA')  # i dunno, deepImg is an Image.py, but sendImage() wants Image
         return Response(content=sendImage(deepImg), media_type="application/png")
 except Exception as e:
-    print("ERROR UH OH OOPSIE WOOPSIES\n{e}")
+    print(f"ERROR UH OH OOPSIE WOOPSIES\n{e}")
         
-
 
 @app.get("/images/catlamp.png")
 async def catLamp(image_url: str):
