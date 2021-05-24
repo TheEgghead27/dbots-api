@@ -57,32 +57,31 @@ async def on_message(message):
     mess = messes[0].lower()
     if "\\" in mess or "/" in mess:
         return  # avoid url escape attempts
+    uri = f"{api_path}?message={mess}"  # base thing like egg
     if mess.startswith(prefix):
         mess = mess[2:]
-    uri = f"{api_path}?message={mess}"  # base thing like egg
-    if mess in commands:
-        uri = f"{api_path}{commands[mess]}{' '.join(messes[1:])}"
-    elif mess in imgs:
-        try:
-            uri = f"{api_path}images/{imgs[mess][0]}?image_url={messes[1]}"
-            if len(imgs[mess]) >= 2:
-                try:
-                    for j in range(2, len(imgs[mess]) + 1):
-                        uri += f"&{imgs[mess][j - 1]}={messes[j]}"
-                except IndexError:
+        if mess in commands:
+            uri = f"{api_path}{commands[mess]}{' '.join(messes[1:])}"
+        elif mess in imgs:
+            try:
+                uri = f"{api_path}images/{imgs[mess][0]}?image_url={messes[1]}"
+                if len(imgs[mess]) >= 2:
                     try:
-                        # noinspection PyUnboundLocalVariable
-                        uri = f"{api_path}say?" \
-                              f"message={messes[0]}%20requires%20another%20argument,%20`{imgs[mess][j - 1]}`!"
-                    except NameError:
-                        print("what the fuck fuck fuck code broken")
-                        return
-
-        except IndexError:
-            uri = f"{api_path}say?message={messes[0]}%20requires%20an%20image%20URL!"
-    elif mess == "help":
-        if helpEmbed:  # this is the only thing that needs on_ready to be ready which would be when it sets helpEmbed
-            await message.channel.send(embed=helpEmbed)
+                        for j in range(2, len(imgs[mess]) + 1):
+                            uri += f"&{imgs[mess][j - 1]}={messes[j]}"
+                    except IndexError:
+                        try:
+                            # noinspection PyUnboundLocalVariable
+                            uri = f"{api_path}say?" \
+                                  f"message={messes[0]}%20requires%20another%20argument,%20`{imgs[mess][j - 1]}`!"
+                        except NameError:
+                            print("what the fuck fuck fuck code broken")
+                            return
+            except IndexError:
+                uri = f"{api_path}say?message={messes[0]}%20requires%20an%20image%20URL!"
+        elif mess == "help":
+            if helpEmbed:  # this is the only thing that needs on_ready to be ready which is when it sets helpEmbed
+                await message.channel.send(embed=helpEmbed)
 
     data = (await request(uri))
     try:
