@@ -19,7 +19,7 @@ except ModuleNotFoundError:  # install the discord modules
 decoder = json.JSONDecoder()
 
 prefix = "e!"
-api_path = "https://the-eggbot-27.herokuapp.com/"
+api_path = "https://egglamp.herokuapp.com/"
 
 intents = discord.Intents.default()
 bot = discord.Client(intents=intents)
