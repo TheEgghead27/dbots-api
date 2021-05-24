@@ -87,6 +87,7 @@ async def autoreply(message: str):
             if capitals >= 3:
                 return {"message": ":lampstarenear:"}
         return {"message": ":lampstare:"}
+    return {"message": None}
 
 
 @app.get("/about")
@@ -629,6 +630,7 @@ async def custom_overlay(image_url: str, overlay_url: str):
 
     # convert the images to be equal in size and mode for compatibility
     image = centerSquare(image)
+    overlay = centerSquare(overlay)
 
     if image.size > overlay.size:
         image.thumbnail(overlay.size)
