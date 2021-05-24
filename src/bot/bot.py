@@ -108,6 +108,8 @@ async def on_message(message):
             await message.channel.send(cookbook[1987:])
         except discord.errors.HTTPException:
             pass
+        except TypeError:
+            pass  # why i havent resorted to on_error yet is sheer laziness
     except KeyError:  # replace with typeerror and pass for 1) nothing and send for 2) img
         print(f"KeyError of {uri}")
         pass
