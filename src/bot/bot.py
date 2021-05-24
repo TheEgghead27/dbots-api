@@ -24,8 +24,8 @@ api_path = "https://the-eggbot-27.herokuapp.com/"
 intents = discord.Intents.all()
 bot = discord.Client(intents=intents)
 
-commands = json.load(open('bot/commands.json', 'r'), "utf-8")
-imgs = json.load(open('bot/images.json', 'r'), "utf-8")
+commands = json.load(open('src/bot/commands.json', 'r'), "utf-8")
+imgs = json.load(open('src/bot/images.json', 'r'), "utf-8")
 helpEmbed = None
 
 
