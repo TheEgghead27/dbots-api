@@ -21,7 +21,7 @@ decoder = json.JSONDecoder()
 prefix = "e!"
 api_path = "https://the-eggbot-27.herokuapp.com/"
 
-intents = discord.Intents.all()
+intents = discord.Intents.default()
 bot = discord.Client(intents=intents)
 
 commands = json.load(open('src/bot/commands.json', 'r'), "utf-8")
