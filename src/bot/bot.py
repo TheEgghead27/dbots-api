@@ -126,7 +126,6 @@ async def request(uri: str):
     print(f"Getting {uri}")
     async with aiohttp.request('get', uri) as res:
         # if res.status == 200:
-        print(await res.read())
         return await res.read()
         # else:
         # raise FileNotFoundError
