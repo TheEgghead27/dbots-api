@@ -2,7 +2,6 @@ import math
 import random
 from fastapi import FastAPI, Response
 import re as regex
-import deeppyer
 from typing import Union
 from aiohttp import request
 from io import BytesIO
@@ -18,6 +17,35 @@ app = FastAPI(title="Eggbot + Catlamp API (Working Title)",
               description="FastAPI API with ports of the functionality some of my Discord bot projects had.")
 
 
+def markdown(text: str):
+    # 2/7 chance of being codeBlock or empty, then 50/50
+    divisor = 0
+    for i in spic:
+        # I don't want the last list's full girth to be considered,
+        # but since it would raise the randrange cap to intended levels, it stays like this with no edits
+        divisor += len(i) + 1
+
+    if random.randrange(1, divisor + 1) <= 2:  # codeBlock and empty have to stay by themselves
+        markedDown = random.choice(spic[-1])
+    else:
+        # Thanks Blue
+        # Repeat until length(tempList) = amount of desired markdowns:
+        #     Random = random(0, length markdown list)
+        #     If !tempList.contains(markdown[random] {
+        # //add to list
+        # }
+        length = random.randrange(1, len(spic[:-1]) + 1)
+        markedDown = ''
+        temp = []
+        while len(temp) < length:
+            thing = random.choice(spic[:-1])
+            if thing not in tuple(temp):
+                temp.append(thing)
+                markedDown += random.choice(thing)
+
+    return markedDown + text + markedDown[::-1]
+
+
 @app.get("/")
 async def autoreply(message: str):
     """Port of simple commands/responses in Eggbot and autoresponses from Catlamp"""
@@ -28,9 +56,9 @@ async def autoreply(message: str):
         if message.startswith(i):
             return {"message": i}
     if message.startswith(eggTrigger):
-        return {"message": random.choice(eggs)}
+        return {"message": markdown(random.choice(eggs))}
     elif message.startswith(("simp", "sɪᴍᴘ")):
-        return {"message": random.choice(simp)}
+        return {"message": markdown(random.choice(simp))}
     elif message.startswith(('moyai', '🗿', ':moyai:', 'mooyai')):
         return {"message": '🗿'}
 
@@ -59,6 +87,7 @@ async def autoreply(message: str):
             if capitals >= 3:
                 return {"message": ":lampstarenear:"}
         return {"message": ":lampstare:"}
+    return {"message": None}
 
 
 @app.get("/about")
@@ -124,12 +153,15 @@ negative = ["Don't count on it.", "My reply is no.", "My sources say no.", "Outl
             "Very doubtful."]
 
 
-@app.get("8ball")
+@app.get("/8ball")
 async def consult_8_ball(question: str):
     """
     Asks the Magic 8-Ball a question.
     Disclaimer: The Magic 8-ball is not sentient and it does not represent the opinions its creators.
     """
+    if not question.strip():
+        return {"message": "Please give the 8-ball a query."}
+
     option = random.randint(1, 3)
     response = ""
     if option == 1:
@@ -139,6 +171,13 @@ async def consult_8_ball(question: str):
     elif option == 3:
         response = "🔴 " + random.choice(negative)
     return {"message": f"🎱 The 8-ball has spoken. 🎱\nQuestion: {question}\nAnswer: {response}"}
+
+
+@app.get("/markdown")
+async def mark_down(string: str):
+    if not string.strip():
+        return {"message": "Please provide a base string to mark down."}
+    return {"message": markdown(string)}
 
 
 # begin image manip mess
@@ -174,8 +213,8 @@ async def getImage(image: str) -> Union[Image.Image, str]:
             return f'"{image}" is not a valid image URL!'
     try:
         image = Image.open(BytesIO(image))
-    except Exception as e:
-        image = str(e)
+    except Exception as ex:
+        image = str(ex)
     return image
 
 
@@ -300,17 +339,22 @@ def sendImage(outImg: Image.Image) -> bytes:
 
 
 # define methods
-@app.get("/images/deepfry.png")
-async def deepfry(image_url: str):
-    """Deepfries the image in the image URL."""
-    image = await getImage(image_url)
-    if isinstance(image, str):
-        return {"message": image}  # error
-    # noinspection PyTypeChecker
-    deepImg = await deeppyer.deepfry(image, flares=False)
-    deepImg = deepImg.convert('RGBA')  # i dunno, deepImg is an Image.py, but sendImage() wants Image
-    return Response(content=sendImage(deepImg), media_type="application/png")
+try:
+    import deeppyer
 
+    @app.get("/images/deepfry.png")
+    async def deepfry(image_url: str):
+        """Deepfries the image in the image URL."""
+        image = await getImage(image_url)
+        if isinstance(image, str):
+            return {"message": image}  # error
+        # noinspection PyTypeChecker
+        deepImg = await deeppyer.deepfry(image, flares=False)
+        deepImg = deepImg.convert('RGBA')  # i dunno, deepImg is an Image.py, but sendImage() wants Image
+        return Response(content=sendImage(deepImg), media_type="application/png")
+except Exception as e:
+    print(f"ERROR UH OH OOPSIE WOOPSIES\n{e}")
+        
 
 @app.get("/images/catlamp.png")
 async def catLamp(image_url: str):
@@ -591,6 +635,7 @@ async def custom_overlay(image_url: str, overlay_url: str):
 
     # convert the images to be equal in size and mode for compatibility
     image = centerSquare(image)
+    overlay = centerSquare(overlay)
 
     if image.size > overlay.size:
         image.thumbnail(overlay.size)

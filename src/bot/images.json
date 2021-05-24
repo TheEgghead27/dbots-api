@@ -1,0 +1,13 @@
+{
+  "catlamp": ["catlamp.png"],
+  "dio": ["dio.png"],
+  "flushed": ["flushed.png"],
+  "joy": ["joy.png"],
+  "invert": ["invert.png"],
+  "grayscale": ["grayscale.png"],
+  "saturate": ["saturate.png"],
+  "mirror": ["mirror.png"],
+  "flip": ["flip.png"],
+  "rotate": ["rotate.png", "degrees"],
+  "custom_overlay": ["custom_overlay.png", "overlay_url"]
+}
