@@ -123,7 +123,7 @@ async def on_message(message):
 
 
 async def request(uri: str):
-    print(f"Getting {uri}")
+    # print(f"Getting {uri}")
     async with aiohttp.request('get', uri) as res:
         # if res.status == 200:
         return await res.read()
