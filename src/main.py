@@ -17,6 +17,35 @@ app = FastAPI(title="Eggbot + Catlamp API (Working Title)",
               description="FastAPI API with ports of the functionality some of my Discord bot projects had.")
 
 
+def markdown(text: str):
+    # 2/7 chance of being codeBlock or empty, then 50/50
+    divisor = 0
+    for i in spic:
+        # I don't want the last list's full girth to be considered,
+        # but since it would raise the randrange cap to intended levels, it stays like this with no edits
+        divisor += len(i) + 1
+
+    if random.randrange(1, divisor + 1) <= 2:  # codeBlock and empty have to stay by themselves
+        markedDown = random.choice(spic[-1])
+    else:
+        # Thanks Blue
+        # Repeat until length(tempList) = amount of desired markdowns:
+        #     Random = random(0, length markdown list)
+        #     If !tempList.contains(markdown[random] {
+        # //add to list
+        # }
+        length = random.randrange(1, len(spic[:-1]) + 1)
+        markedDown = ''
+        temp = []
+        while len(temp) < length:
+            thing = random.choice(spic[:-1])
+            if thing not in tuple(temp):
+                temp.append(thing)
+                markedDown += random.choice(thing)
+
+    return markedDown + text + markedDown[::-1]
+
+
 @app.get("/")
 async def autoreply(message: str):
     """Port of simple commands/responses in Eggbot and autoresponses from Catlamp"""
@@ -27,9 +56,9 @@ async def autoreply(message: str):
         if message.startswith(i):
             return {"message": i}
     if message.startswith(eggTrigger):
-        return {"message": random.choice(eggs)}
+        return {"message": markdown(random.choice(eggs))}
     elif message.startswith(("simp", "sɪᴍᴘ")):
-        return {"message": random.choice(simp)}
+        return {"message": markdown(random.choice(simp))}
     elif message.startswith(('moyai', '🗿', ':moyai:', 'mooyai')):
         return {"message": '🗿'}
 
@@ -123,7 +152,7 @@ negative = ["Don't count on it.", "My reply is no.", "My sources say no.", "Outl
             "Very doubtful."]
 
 
-@app.get("8ball")
+@app.get("/8ball")
 async def consult_8_ball(question: str):
     """
     Asks the Magic 8-Ball a question.
@@ -138,6 +167,11 @@ async def consult_8_ball(question: str):
     elif option == 3:
         response = "🔴 " + random.choice(negative)
     return {"message": f"🎱 The 8-ball has spoken. 🎱\nQuestion: {question}\nAnswer: {response}"}
+
+
+@app.get("/markdown")
+async def mark_down(string: str):
+    return {"message": markdown(string)}
 
 
 # begin image manip mess

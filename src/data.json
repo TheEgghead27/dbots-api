@@ -30,7 +30,7 @@
     "bruh",
     "lol",
     "oof",
-	"smh"
+    "smh"
   ],
   "simp": [
     "Simp",
@@ -202,5 +202,25 @@
     "I didn't realize this dish had to specify your brain as a fucking step!",
     "What are you? You're a fucking idiot sandwich!",
     "I'd give you what you deserved for that dish, but that would violate all the laws of robotics."
+  ],
+  "spic": [
+    [
+      "*",
+      "**",
+      "***"
+    ],
+    [
+      "__",
+      ""
+    ],
+    [
+      "||",
+      "",
+      ""
+    ],
+    [
+      "`",
+      ""
+    ]
   ]
 }

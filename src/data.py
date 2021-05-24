@@ -13,6 +13,7 @@ eggTrigger = tuple(eggTrigger)
 mmyes = tuple(data['mmyes'])
 simp = tuple(data['simp'])
 insults = tuple(data['insults'])
+spic = tuple(data['spic'])
 del data
 
 try:
