@@ -159,6 +159,9 @@ async def consult_8_ball(question: str):
     Asks the Magic 8-Ball a question.
     Disclaimer: The Magic 8-ball is not sentient and it does not represent the opinions its creators.
     """
+    if not question.strip():
+        return {"message": "Please give the 8-ball a query."}
+
     option = random.randint(1, 3)
     response = ""
     if option == 1:
@@ -172,6 +175,8 @@ async def consult_8_ball(question: str):
 
 @app.get("/markdown")
 async def mark_down(string: str):
+    if not string.strip():
+        return {"message": "Please provide a base string to mark down."}
     return {"message": markdown(string)}
 
 
