@@ -53,11 +53,11 @@ async def on_ready():
 async def on_message(message):
     if message.author.bot:
         return  # don't let bots ddos
+    uri = f"{api_path}?message={message.content}"
     messes = message.content.split()
     mess = messes[0].lower()
     if "\\" in mess or "/" in mess:
         return  # avoid url escape attempts
-    uri = f"{api_path}?message={mess}"  # base thing like egg
     if mess.startswith(prefix):
         mess = mess[2:]
         if mess in commands:
