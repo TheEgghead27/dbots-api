@@ -85,9 +85,16 @@ async def autoreply(message: str):
                 capitals += 1
 
             if capitals >= 3:
-                return {"message": ":lampstarenear:"}
-        return {"message": ":lampstare:"}
+                return {"message": rand_stare(True)}
+        return {"message": rand_stare(False)}
     return {"message": None}
+
+
+def rand_stare(urgent: bool) -> str:
+    print(lampstares)
+    if urgent:
+        return random.choice(lampstares[1])
+    return random.choice(lampstares[0])
 
 
 @app.get("/about")

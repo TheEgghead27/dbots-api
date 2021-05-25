@@ -14,6 +14,7 @@ mmyes = tuple(data['mmyes'])
 simp = tuple(data['simp'])
 insults = tuple(data['insults'])
 spic = tuple(data['spic'])
+lampstares = tuple(data['lampstares'])
 del data
 
 try:
