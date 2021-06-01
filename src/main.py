@@ -13,7 +13,7 @@ except ModuleNotFoundError:
     from src.data import *
 
 
-app = FastAPI(title="Eggbot + Catlamp API (Working Title)",
+app = FastAPI(title="Egglamp",
               description="FastAPI API with ports of the functionality some of my Discord bot projects had.")
 
 
@@ -91,7 +91,6 @@ async def autoreply(message: str):
 
 
 def rand_stare(urgent: bool) -> str:
-    print(lampstares)
     if urgent:
         return random.choice(lampstares[1])
     return random.choice(lampstares[0])
@@ -185,6 +184,13 @@ async def mark_down(string: str):
     if not string.strip():
         return {"message": "Please provide a base string to mark down."}
     return {"message": markdown(string)}
+
+
+@app.get("/thefart")
+async def fart():
+    if not random.randint(0, 2):
+        return {"message": "the fart 😭"}
+    return {"message": "the fart " + rand_stare(bool(random.randint(0, 2)))}
 
 
 # begin image manip mess
