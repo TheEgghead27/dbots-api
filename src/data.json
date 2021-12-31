@@ -223,5 +223,9 @@
       ""
     ]
   ],
-  "lampstares": [["<:lampstare:747483819388436570>", "<:lampstarementalbreakdown:840452199838253086>", "<:lampstarehehe:790398514310938635>"], ["<:lampstarereal:804799852755943488>", "<:lampstarenear:775818082534424577>", "<:lampstarerealreal:888896896872099910>"]]
+  "lampstares": [["<:lampstare:747483819388436570>", "<:lampstarementalbreakdown:840452199838253086>", "<:lampstarehehe:790398514310938635>"], ["<:lampstarereal:804799852755943488>", "<:lampstarenear:775818082534424577>", "<:lampstarerealreal:888896896872099910>"]],
+  "positive": ["It is certain.", "It is decidedly so.", "Without a doubt.", "Yes – definitely.", "You may rely on it.", "As I see it, yes.", "Most likely.", "Outlook good.", "Yes.", "Signs point to yes."],
+  "unsure": ["Reply hazy, try again.", "Ask again later.", "Better not tell you now.", "Cannot predict now.", "Concentrate and ask again."],
+  "negative": ["Don't count on it.", "My reply is no.", "My sources say no.", "Outlook not so good.", "Very doubtful."]
+  
 }
